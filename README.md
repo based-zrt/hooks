@@ -1,4 +1,4 @@
-# hooks
+# hooks [![Build Status](https://github.com/based-zrt/hooks/actions/workflows/build.yml/badge.svg)](https://github.com/based-zrt/hooks/actions/workflows/build.yml)
 
 A small webhook transformation tool.
 
