@@ -9,9 +9,17 @@ Receive webhook pushes from Docker Registries or Jira, and forward them to Disco
 ## Docker Compose
 > Example Docker Compose setup:
 
-```
-todo
-    
+```yml
+services:
+  hooks:
+    image: <your image name>
+    container_name: hooks
+    restart: unless-stopped
+    environment:
+      JIRA_TOKEN: "" # URL query field for authenticating the jira post request
+      JIRA_URL: "" # Discord webhook URL for jira messages
+      DOCKER_TOKEN: "" # Bearer token for Docker Registry post request
+      DOCKER_URL: "" # Discord webhook URL for docker messages
 ```
 
 ## License
