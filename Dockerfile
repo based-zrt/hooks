@@ -1,13 +1,13 @@
-FROM rust:1.73-alpine as builder
+FROM clux/muslrust:stable as builder
 
 WORKDIR /app
 COPY . . 
 
-RUN cargo install --path .
+RUN cargo install --path . --root . --no-track
 
 FROM alpine:latest as runner
 
 WORKDIR /app
-COPY --from=builder /hooks .
+COPY --from=builder /app/bin/hooks .
 
 CMD [ "/app/hooks" ]
