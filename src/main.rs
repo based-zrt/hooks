@@ -1,5 +1,6 @@
 mod docker;
 mod jira;
+mod types;
 
 use std::sync::Arc;
 use std::{env, process};
@@ -7,6 +8,7 @@ use std::{env, process};
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use actix_web_httpauth::extractors::bearer;
+use dotenv::dotenv;
 use webhook::client::WebhookClient;
 
 struct Clients {
@@ -16,6 +18,7 @@ struct Clients {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
