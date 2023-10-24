@@ -35,15 +35,7 @@ async fn handle(info: web::Query<Info>, body: web::Json<JiraData>, clients: Data
         return HttpResponse::Unauthorized().finish();
     }
 
-    let d = clients.jira_client.send_message(&message(&body)).await;
-    match d {
-        Ok(o) => {
-            println!("webhook delivery succesful: {}", o);
-        }
-        Err(e) => {
-            println!("geci: {}", e);
-        }
-    }
+    let _ = clients.jira_client.send_message(&message(&body)).await;
 
     HttpResponse::Accepted().finish()
 }

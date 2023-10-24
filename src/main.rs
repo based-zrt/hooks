@@ -19,7 +19,7 @@ struct Clients {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    env::set_var("RUST_LOG", "debug");
+    env::set_var("RUST_LOG", "info");
     env_logger::init();
 
     let jira_url = match env::var("JIRA_URL") {
