@@ -2,8 +2,8 @@ mod docker;
 mod jira;
 mod types;
 
+use std::env;
 use std::sync::Arc;
-use std::{env, process};
 
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
@@ -22,20 +22,9 @@ async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "info");
     env_logger::init();
 
-    let jira_url = match env::var("JIRA_URL") {
-        Ok(v) => v,
-        Err(_) => "".to_string(),
-    };
+    let jira_url = env::var("JIRA_URL").expect("missing jira url");
 
-    let docker_url = match env::var("DOCKER_URL") {
-        Ok(v) => v,
-        Err(_) => "".to_string(),
-    };
-
-    if jira_url.is_empty() || docker_url.is_empty() {
-        println!("Missing webhook url");
-        process::exit(-1);
-    }
+    let docker_url = env::var("DOCKER_URL").expect("missing docker url");
 
     let data = Arc::new(Clients {
         jira_client: WebhookClient::new(&jira_url),
