@@ -1,5 +1,7 @@
-use std::env;
+use std::{env, os::raw};
 use std::sync::Arc;
+use std::fs:File;
+use std::io::prelude::*;
 
 use actix_web::{
     post,
@@ -25,7 +27,12 @@ struct Info {
 }
 
 #[post("/jira")]
-async fn handle(info: web::Query<Info>, body: web::Json<JiraData>, clients: Data<Arc<Clients>>) -> impl Responder {
+async fn handle(
+    info: web::Query<Info>,
+    body: web::Json<JiraData>,
+    raw_body: String,
+    clients: Data<Arc<Clients>>,
+) -> impl Responder {
     let env_token = match env::var(ENV_KEY) {
         Ok(v) => v,
         Err(_) => return HttpResponse::InternalServerError().json(json!({"error": "Missing environment value"})),
@@ -35,9 +42,19 @@ async fn handle(info: web::Query<Info>, body: web::Json<JiraData>, clients: Data
         return HttpResponse::Unauthorized().finish();
     }
 
+    if env::var("DEBUG_REQUESTS").unwrap_or("".to_string()) == "" {
+        log_request(raw_body);
+    }
+
     let _ = clients.jira_client.send_message(&message(&body)).await;
 
     HttpResponse::Accepted().finish()
+}
+
+fn log_request(data: String) -> std::io::Result<()> {
+    let mut file = File::open("last_request.json")?;
+    file.write_all(data.as_bytes())?;
+    Ok(())
 }
 
 fn message(data: &web::Json<JiraData>) -> Message {
