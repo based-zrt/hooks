@@ -8,6 +8,7 @@ use actix_web::{
     web::{self, Data},
     HttpResponse, Responder,
 };
+use chrono::Utc;
 use serde::Deserialize;
 use serde_json::json;
 use webhook::models::Message;
@@ -27,12 +28,7 @@ struct Info {
 }
 
 #[post("/jira")]
-async fn handle(
-    info: web::Query<Info>,
-    body: web::Json<JiraData>,
-    raw_body: String,
-    clients: Data<Arc<Clients>>,
-) -> impl Responder {
+async fn handle(info: web::Query<Info>, body: String, clients: Data<Arc<Clients>>) -> impl Responder {
     let env_token = match env::var(ENV_KEY) {
         Ok(v) => v,
         Err(_) => return HttpResponse::InternalServerError().json(json!({"error": "Missing environment value"})),
@@ -42,22 +38,34 @@ async fn handle(
         return HttpResponse::Unauthorized().finish();
     }
 
-    if env::var("DEBUG_REQUESTS").unwrap_or("".to_string()) == "" {
-        let _ = log_request(raw_body);
+    if env::var("LOG_REQUESTS").unwrap_or("".to_string()) != "" {
+        let _ = log_request(&body);
     }
 
-    let _ = clients.jira_client.send_message(&message(&body)).await;
+    let j: JiraData = serde_json::from_str(&body).unwrap();
+    let _ = clients.jira_client.send_message(&create_message(j)).await;
 
     HttpResponse::Accepted().finish()
 }
 
-fn log_request(data: String) -> std::io::Result<()> {
-    let mut file = File::open("last_request.json")?;
+fn log_request(data: &String) -> std::io::Result<()> {
+    let mut file = File::create(format!("request_{}.json", Utc::now().format("%m-%d_%H-%M-%S")))?;
     file.write_all(data.as_bytes())?;
     Ok(())
 }
 
-fn message(data: &web::Json<JiraData>) -> Message {
+fn root_url(url: &str) -> String {
+    let idx = url.replace("https://", "").find('/').unwrap();
+    url.chars().take(8 + idx).collect()
+}
+
+fn extract_event_name(event: &str) -> String {
+    let mut chars: Vec<char> = event.replace('_', " ").replace("jira:", "").chars().collect();
+    chars[0] = chars[0].to_uppercase().next().unwrap();
+    chars.into_iter().collect()
+}
+
+fn create_message(data: JiraData) -> Message {
     let root_url = root_url(&data.user.self_url);
     let event_name = extract_event_name(&data.webhook_event);
     let mut msg: Message = Message::new();
@@ -97,15 +105,4 @@ fn message(data: &web::Json<JiraData>) -> Message {
         }
     });
     msg
-}
-
-fn root_url(url: &str) -> String {
-    let idx = url.replace("https://", "").find('/').unwrap();
-    url.chars().take(8 + idx).collect()
-}
-
-fn extract_event_name(event: &str) -> String {
-    let mut chars: Vec<char> = event.replace('_', " ").replace("jira:", "").chars().collect();
-    chars[0] = chars[0].to_uppercase().next().unwrap();
-    chars.into_iter().collect()
 }
