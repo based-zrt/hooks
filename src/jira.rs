@@ -1,7 +1,7 @@
-use std::{env, os::raw};
-use std::sync::Arc;
-use std::fs:File;
+use std::env;
+use std::fs::File;
 use std::io::prelude::*;
+use std::sync::Arc;
 
 use actix_web::{
     post,
@@ -43,7 +43,7 @@ async fn handle(
     }
 
     if env::var("DEBUG_REQUESTS").unwrap_or("".to_string()) == "" {
-        log_request(raw_body);
+        let _ = log_request(raw_body);
     }
 
     let _ = clients.jira_client.send_message(&message(&body)).await;
