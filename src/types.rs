@@ -10,6 +10,7 @@ pub struct JiraData {
     pub user: JiraUser,
     pub issue: Option<JiraIssue>,
     pub issue_event_type_name: Option<String>,
+    pub changelog: JiraChangelog,
 }
 
 #[derive(Deserialize)]
@@ -73,4 +74,19 @@ pub struct JiraProject {
     pub key: String,
     pub name: String,
     pub avatar_urls: HashMap<String, String>,
+}
+
+#[derive(Deserialize)]
+pub struct JiraChangelog {
+    pub id: String,
+    pub items: Vec<JiraChangelogItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JiraChangelogItem {
+    pub field: String,
+    pub field_id: String,
+    pub from_string: String,
+    pub to_string: String,
 }
