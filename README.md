@@ -25,6 +25,9 @@ services:
       JIRA_EMAIL: "" # account email
       JIRA_REST_TOKEN: "" # account rest api token
       HOST_URL: "" # the base url for the service
+    volumes:
+      - /path/to/images:/app/img
+      - /path/to/requests:/app/requests
 ```
 
 ## License
