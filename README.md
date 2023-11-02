@@ -7,6 +7,7 @@ A small webhook transformation tool.
 Receive webhook pushes from Docker Registries or Jira, and forward them to Discord Webhooks (with neat embeds)
 
 ## Docker Compose
+
 > Example Docker Compose setup:
 
 ```yml
@@ -20,9 +21,14 @@ services:
       JIRA_URL: "" # Discord webhook URL for jira messages
       DOCKER_TOKEN: "" # Bearer token for Docker Registry post request
       DOCKER_URL: "" # Discord webhook URL for docker messages
+      # In order to deliver issue type & project avatars, we have to download and redirect the images using an authorized
+      JIRA_EMAIL: "" # account email
+      JIRA_REST_TOKEN: "" # account rest api token
+      HOST_URL: "" # the base url for the service
 ```
 
 ## License
+
 ```
     hooks
     Copyright (C) 2023  SunStorm
