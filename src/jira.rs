@@ -139,8 +139,12 @@ fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_url: String, iss
 
             for item in &data.changelog.items {
                 e.field(&item.field, "", false)
-                    .field("From", &item.from_string.unwrap_or("(unknown)".to_string()), true)
-                    .field("To", &item.to_string.unwrap_or("(unknown)".to_string()), true);
+                    .field(
+                        "From",
+                        item.from_string.as_ref().unwrap_or(&"(unknown)".to_string()),
+                        true,
+                    )
+                    .field("To", item.to_string.as_ref().unwrap_or(&"(unknown)".to_string()), true);
             }
         }
         "jira:issue_deleted" => {
