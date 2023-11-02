@@ -14,6 +14,7 @@ use serde::Deserialize;
 use serde_json::json;
 use webhook::models::{Embed, Message};
 
+use crate::types::JiraComment;
 use crate::{imgstore, types::JiraData, Clients};
 
 const ENV_KEY: &str = "JIRA_TOKEN";
@@ -109,7 +110,15 @@ async fn create_message(data: JiraData) -> Result<Message> {
         );
         decorate_issue_embed(&mut embed, &data, project_url, issue_type_url, project_avatar_url);
     }
+
     msg.embeds.push(embed);
+
+    if data.comment.is_some() {
+        let mut comment_embed = Embed::new();
+        decorate_comment_embed(&mut comment_embed, data.comment.as_ref().unwrap());
+        msg.embeds.push(comment_embed);
+    }
+
     Ok(msg)
 }
 
@@ -124,7 +133,10 @@ fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_url: String, iss
                 .description(
                     format!(
                         "[`{}`]({}) **{}**\n```\n{}\n```",
-                        i.key, project_url, f.summary, f.description
+                        i.key,
+                        project_url,
+                        f.summary,
+                        f.description.as_ref().unwrap_or(&"".to_string())
                     )
                     .as_str(),
                 )
@@ -132,19 +144,21 @@ fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_url: String, iss
                 .field("Priority", &f.priority.name, false)
                 .color(ISSUE_CREATED);
         }
-        "jira:issue_updated" => {
+        "jira:issue_updated" | "comment_created" => {
             e.thumbnail(&issue_img)
                 .description(format!("[`{}`]({}) **{}**\n", i.key, project_url, f.summary).as_str())
                 .color(ISSUE_UPDATED);
 
-            for item in &data.changelog.items {
-                e.field(&item.field, "", false)
-                    .field(
-                        "From",
-                        item.from_string.as_ref().unwrap_or(&"(unknown)".to_string()),
-                        true,
-                    )
-                    .field("To", item.to_string.as_ref().unwrap_or(&"(unknown)".to_string()), true);
+            if data.changelog.is_some() {
+                for item in &data.changelog.as_ref().unwrap().items {
+                    e.field(&item.field, "", false)
+                        .field(
+                            "From",
+                            item.from_string.as_ref().unwrap_or(&"(unknown)".to_string()),
+                            true,
+                        )
+                        .field("To", item.to_string.as_ref().unwrap_or(&"(unknown)".to_string()), true);
+                }
             }
         }
         "jira:issue_deleted" => {
@@ -156,4 +170,13 @@ fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_url: String, iss
             e.color(UNSPECIFIED_EVENT);
         }
     }
+}
+
+fn decorate_comment_embed(e: &mut Embed, c: &JiraComment) {
+    e.author(
+        c.author.display_name.as_str(),
+        None,
+        c.author.avatar_urls.get("48x48").cloned(),
+    )
+    .description(c.body.as_str());
 }

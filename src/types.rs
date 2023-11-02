@@ -10,7 +10,8 @@ pub struct JiraData {
     pub user: Option<JiraUser>,
     pub issue: Option<JiraIssue>,
     pub issue_event_type_name: Option<String>,
-    pub changelog: JiraChangelog,
+    pub changelog: Option<JiraChangelog>,
+    pub comment: Option<JiraComment>,
 }
 
 #[derive(Deserialize)]
@@ -25,10 +26,10 @@ pub struct JiraIssue {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JiraIssueFields {
-    pub creator: JiraUser,
+    pub creator: Option<JiraUser>,
     pub project: JiraProject,
     pub summary: String,
-    pub description: String,
+    pub description: Option<String>,
     pub priority: JiraIssuePriority,
     #[serde(rename = "issuetype")]
     pub issue_type: JiraIssueType,
@@ -89,4 +90,17 @@ pub struct JiraChangelogItem {
     pub field_id: String,
     pub from_string: Option<String>,
     pub to_string: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JiraComment {
+    #[serde(rename = "self")]
+    pub self_url: String,
+    pub id: String,
+    pub author: JiraUser,
+    pub body: String,
+    pub update_author: JiraUser,
+    pub created: String,
+    pub updated: String,
 }
