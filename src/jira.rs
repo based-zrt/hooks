@@ -71,7 +71,8 @@ fn extract_event_name(event: &str) -> String {
 }
 
 async fn create_message(data: JiraData) -> Result<Message> {
-    let root_url = root_url(&data.user.self_url);
+    let user = data.user.as_ref().unwrap();
+    let project_url = root_url(&user.self_url);
     let event_name = extract_event_name(&data.webhook_event);
 
     let mut msg: Message = Message::new();
@@ -79,45 +80,50 @@ async fn create_message(data: JiraData) -> Result<Message> {
 
     let mut embed = Embed::new();
     embed
-        .author(
-            &data.user.display_name,
-            None,
-            data.user.avatar_urls.get("48x48").cloned(),
-        )
+        .author(&user.display_name, None, user.avatar_urls.get("48x48").cloned())
         .title(&event_name)
-        .url(&root_url);
+        .url(&project_url);
 
     if data.issue.is_some() {
-        let issue_type_url = imgstore::store(&data.issue.as_ref().unwrap().fields.issue_type.icon_url).await?;
-        let project_avatar_url = imgstore::store(
-            data.issue
-                .as_ref()
-                .unwrap()
-                .fields
-                .project
-                .avatar_urls
-                .get("48x48")
-                .unwrap(),
-        )
-        .await?;
-        decorate_issue_embed(&mut embed, &data, root_url);
+        let host_url = env::var("HOST_URL").expect("Missing host url value");
+        let issue_type_url = format!(
+            "{}/{}",
+            host_url,
+            imgstore::store(&data.issue.as_ref().unwrap().fields.issue_type.icon_url).await?
+        );
+        let project_avatar_url = format!(
+            "{}/{}",
+            host_url,
+            imgstore::store(
+                data.issue
+                    .as_ref()
+                    .unwrap()
+                    .fields
+                    .project
+                    .avatar_urls
+                    .get("48x48")
+                    .unwrap(),
+            )
+            .await?
+        );
+        decorate_issue_embed(&mut embed, &data, project_url, issue_type_url, project_avatar_url);
     }
     msg.embeds.push(embed);
     Ok(msg)
 }
 
-fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_root_url: String) {
+fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_url: String, issue_img: String, project_img: String) {
     let i = data.issue.as_ref().unwrap();
     let f = &i.fields;
-    e.footer(&f.project.name, f.project.avatar_urls.get("48x48").cloned());
+    e.footer(&f.project.name, Some(project_img));
 
     match data.webhook_event.as_str() {
         "jira:issue_created" => {
-            e.thumbnail(&f.issue_type.icon_url)
+            e.thumbnail(&issue_img)
                 .description(
                     format!(
                         "[`{}`]({}) **{}**\n```\n{}\n```",
-                        i.key, project_root_url, f.summary, f.description
+                        i.key, project_url, f.summary, f.description
                     )
                     .as_str(),
                 )
@@ -126,7 +132,8 @@ fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_root_url: String
                 .color(ISSUE_CREATED);
         }
         "jira:issue_updated" => {
-            e.description(format!("[`{}`]({}) **{}**\n", i.key, project_root_url, f.summary).as_str())
+            e.thumbnail(&issue_img)
+                .description(format!("[`{}`]({}) **{}**\n", i.key, project_url, f.summary).as_str())
                 .color(ISSUE_UPDATED);
 
             for item in &data.changelog.items {
@@ -136,10 +143,12 @@ fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_root_url: String
             }
         }
         "jira:issue_deleted" => {
-            e.thumbnail(&f.issue_type.icon_url)
-                .description(format!("[`{}`]({}) **{}**\n", i.key, project_root_url, f.summary).as_str())
+            e.thumbnail(&issue_img)
+                .description(format!("[`{}`]({}) **{}**\n", i.key, project_url, f.summary).as_str())
                 .color(ISSUE_DELETED);
         }
-        _ => {}
+        _ => {
+            e.color(UNSPECIFIED_EVENT);
+        }
     }
 }
