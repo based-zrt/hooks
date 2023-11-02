@@ -54,7 +54,7 @@ async fn handle(info: web::Query<Info>, body: String, clients: Data<Arc<Clients>
 }
 
 fn log_request(data: &String) -> std::io::Result<()> {
-    std::fs::create_dir_all(Path::new("requests/"))?;
+    let _ = std::fs::create_dir_all(Path::new("requests/"));
     let mut file = File::create(format!("requests/request_{}.json", Utc::now().format("%m-%d_%H-%M-%S")))?;
     file.write_all(data.as_bytes())?;
     Ok(())
