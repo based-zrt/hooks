@@ -1,7 +1,7 @@
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::sync::Arc;
+use std::{env, path::Path};
 
 use actix_web::{
     post,
@@ -54,7 +54,8 @@ async fn handle(info: web::Query<Info>, body: String, clients: Data<Arc<Clients>
 }
 
 fn log_request(data: &String) -> std::io::Result<()> {
-    let mut file = File::create(format!("request_{}.json", Utc::now().format("%m-%d_%H-%M-%S")))?;
+    std::fs::create_dir_all(Path::new("requests/"))?;
+    let mut file = File::create(format!("requests/request_{}.json", Utc::now().format("%m-%d_%H-%M-%S")))?;
     file.write_all(data.as_bytes())?;
     Ok(())
 }
