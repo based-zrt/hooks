@@ -73,18 +73,24 @@ fn extract_event_name(event: &str) -> String {
 }
 
 async fn create_message(data: JiraData) -> Result<Message> {
-    let user = data.user.as_ref().unwrap();
-    let project_url = root_url(&user.self_url);
+    let user = data.user.as_ref();
     let event_name = extract_event_name(&data.webhook_event);
 
     let mut msg: Message = Message::new();
     msg.username("Jira");
 
     let mut embed = Embed::new();
-    embed
-        .author(&user.display_name, None, user.avatar_urls.get("48x48").cloned())
-        .title(&event_name)
-        .url(&project_url);
+    embed.title(&event_name);
+
+    if data.user.is_some() {
+        embed
+            .author(
+                &user.unwrap().display_name,
+                None,
+                user.unwrap().avatar_urls.get("48x48").cloned(),
+            )
+            .url(&root_url(&user.unwrap().self_url));
+    }
 
     if data.issue.is_some() {
         let host_url = env::var("HOST_URL").expect("Missing host url value");
@@ -108,7 +114,7 @@ async fn create_message(data: JiraData) -> Result<Message> {
             )
             .await?
         );
-        decorate_issue_embed(&mut embed, &data, project_url, issue_type_url, project_avatar_url);
+        decorate_issue_embed(&mut embed, &data, issue_type_url, project_avatar_url);
     }
 
     msg.embeds.push(embed);
@@ -122,8 +128,9 @@ async fn create_message(data: JiraData) -> Result<Message> {
     Ok(msg)
 }
 
-fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_url: String, issue_img: String, project_img: String) {
+fn decorate_issue_embed(e: &mut Embed, data: &JiraData, issue_img: String, project_img: String) {
     let i = data.issue.as_ref().unwrap();
+    let project_url = root_url(&i.self_url);
     let f = &i.fields;
     e.footer(&f.project.name, Some(project_img));
 
