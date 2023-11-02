@@ -87,6 +87,6 @@ pub struct JiraChangelog {
 pub struct JiraChangelogItem {
     pub field: String,
     pub field_id: String,
-    pub from_string: String,
-    pub to_string: String,
+    pub from_string: Option<String>,
+    pub to_string: Option<String>,
 }
