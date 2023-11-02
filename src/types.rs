@@ -7,7 +7,7 @@ use serde::Deserialize;
 pub struct JiraData {
     pub timestamp: i64,
     pub webhook_event: String,
-    pub user: JiraUser,
+    pub user: Option<JiraUser>,
     pub issue: Option<JiraIssue>,
     pub issue_event_type_name: Option<String>,
     pub changelog: JiraChangelog,
