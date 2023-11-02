@@ -1,4 +1,5 @@
 mod docker;
+mod imgstore;
 mod jira;
 mod types;
 
@@ -8,6 +9,7 @@ use std::sync::Arc;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use actix_web_httpauth::extractors::bearer;
+use anyhow::Result;
 use dotenv::dotenv;
 use webhook::client::WebhookClient;
 
@@ -17,7 +19,7 @@ struct Clients {
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<()> {
     dotenv().ok();
     env::set_var("RUST_LOG", "info");
     env_logger::init();
@@ -37,8 +39,11 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(data.clone()))
             .service(jira::handle)
             .service(docker::handle)
+            .service(imgstore::serve_image)
     })
     .bind(("0.0.0.0", 3000))?
     .run()
-    .await
+    .await?;
+
+    unreachable!();
 }

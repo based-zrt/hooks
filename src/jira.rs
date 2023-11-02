@@ -8,15 +8,13 @@ use actix_web::{
     web::{self, Data},
     HttpResponse, Responder,
 };
+use anyhow::Result;
 use chrono::Utc;
 use serde::Deserialize;
 use serde_json::json;
 use webhook::models::{Embed, Message};
 
-use crate::{
-    types::{JiraData, JiraIssue},
-    Clients,
-};
+use crate::{imgstore, types::JiraData, Clients};
 
 const ENV_KEY: &str = "JIRA_TOKEN";
 
@@ -46,7 +44,11 @@ async fn handle(info: web::Query<Info>, body: String, clients: Data<Arc<Clients>
     }
 
     let j: JiraData = serde_json::from_str(&body).unwrap();
-    let _ = clients.jira_client.send_message(&create_message(j)).await;
+
+    let _ = clients
+        .jira_client
+        .send_message(&create_message(j).await.unwrap())
+        .await;
 
     HttpResponse::Accepted().finish()
 }
@@ -68,7 +70,7 @@ fn extract_event_name(event: &str) -> String {
     chars.into_iter().collect()
 }
 
-fn create_message(data: JiraData) -> Message {
+async fn create_message(data: JiraData) -> Result<Message> {
     let root_url = root_url(&data.user.self_url);
     let event_name = extract_event_name(&data.webhook_event);
 
@@ -86,30 +88,48 @@ fn create_message(data: JiraData) -> Message {
         .url(&root_url);
 
     if data.issue.is_some() {
-        decorate_issue_embed(&mut embed, data, root_url);
+        let issue_type_url = imgstore::store(&data.issue.as_ref().unwrap().fields.issue_type.icon_url).await?;
+        let project_avatar_url = imgstore::store(
+            data.issue
+                .as_ref()
+                .unwrap()
+                .fields
+                .project
+                .avatar_urls
+                .get("48x48")
+                .unwrap(),
+        )
+        .await?;
+        decorate_issue_embed(&mut embed, &data, root_url);
     }
     msg.embeds.push(embed);
-    msg
+    Ok(msg)
 }
 
-fn decorate_issue_embed(e: &mut Embed, data: JiraData, root: String) {
-    let i = data.issue.unwrap();
+fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_root_url: String) {
+    let i = data.issue.as_ref().unwrap();
     let f = &i.fields;
     e.footer(&f.project.name, f.project.avatar_urls.get("48x48").cloned());
 
     match data.webhook_event.as_str() {
         "jira:issue_created" => {
             e.thumbnail(&f.issue_type.icon_url)
-                .description(format!("[`{}`]({}) **{}**\n```\n{}\n```", i.key, root, f.summary, f.description).as_str())
+                .description(
+                    format!(
+                        "[`{}`]({}) **{}**\n```\n{}\n```",
+                        i.key, project_root_url, f.summary, f.description
+                    )
+                    .as_str(),
+                )
                 .field("Type", &f.issue_type.name, false)
                 .field("Priority", &f.priority.name, false)
                 .color(ISSUE_CREATED);
         }
         "jira:issue_updated" => {
-            e.description(format!("[`{}`]({}) **{}**\n", i.key, root, f.summary).as_str())
+            e.description(format!("[`{}`]({}) **{}**\n", i.key, project_root_url, f.summary).as_str())
                 .color(ISSUE_UPDATED);
 
-            for item in data.changelog.items {
+            for item in &data.changelog.items {
                 e.field(&item.field, "", false)
                     .field("From", &item.from_string, true)
                     .field("To", &item.to_string, true);
@@ -117,7 +137,7 @@ fn decorate_issue_embed(e: &mut Embed, data: JiraData, root: String) {
         }
         "jira:issue_deleted" => {
             e.thumbnail(&f.issue_type.icon_url)
-                .description(format!("[`{}`]({}) **{}**\n", i.key, root, f.summary).as_str())
+                .description(format!("[`{}`]({}) **{}**\n", i.key, project_root_url, f.summary).as_str())
                 .color(ISSUE_DELETED);
         }
         _ => {}
