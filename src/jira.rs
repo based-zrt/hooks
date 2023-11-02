@@ -14,7 +14,7 @@ use serde::Deserialize;
 use serde_json::json;
 use webhook::models::{Embed, Message};
 
-use crate::types::JiraComment;
+use crate::types::Comment;
 use crate::{imgstore, types::JiraData, Clients};
 
 const ENV_KEY: &str = "JIRA_TOKEN";
@@ -172,7 +172,7 @@ fn decorate_issue_embed(e: &mut Embed, data: &JiraData, project_url: String, iss
     }
 }
 
-fn decorate_comment_embed(e: &mut Embed, c: &JiraComment) {
+fn decorate_comment_embed(e: &mut Embed, c: &Comment) {
     e.author(
         c.author.display_name.as_str(),
         None,

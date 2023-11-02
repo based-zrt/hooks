@@ -4,7 +4,7 @@ A small webhook transformation tool.
 
 ### What?
 
-Receive webhook pushes from Docker Registries or Jira, and forward them to Discord Webhooks (with neat embeds)
+Receive webhook pushes from Jira and forward them to Discord Webhooks (with neat embeds)
 
 ## Docker Compose
 
@@ -19,12 +19,11 @@ services:
     environment:
       JIRA_TOKEN: "" # URL query field for authenticating the jira post request
       JIRA_URL: "" # Discord webhook URL for jira messages
-      DOCKER_TOKEN: "" # Bearer token for Docker Registry post request
-      DOCKER_URL: "" # Discord webhook URL for docker messages
       # In order to deliver issue type & project avatars, we have to download and redirect the images using an authorized
       JIRA_EMAIL: "" # account email
       JIRA_REST_TOKEN: "" # account rest api token
       HOST_URL: "" # the base url for the service
+      LOG_REQUESTS: "true/false" # if you want to save the received requests set it to true
     volumes:
       - /path/to/images:/app/img
       - /path/to/requests:/app/requests

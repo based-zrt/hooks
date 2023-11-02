@@ -1,4 +1,3 @@
-mod docker;
 mod imgstore;
 mod jira;
 mod types;
@@ -15,7 +14,6 @@ use webhook::client::WebhookClient;
 
 struct Clients {
     jira_client: WebhookClient,
-    docker_client: WebhookClient,
 }
 
 #[actix_web::main]
@@ -26,11 +24,8 @@ async fn main() -> Result<()> {
 
     let jira_url = env::var("JIRA_URL").expect("missing jira url");
 
-    let docker_url = env::var("DOCKER_URL").expect("missing docker url");
-
     let data = Arc::new(Clients {
         jira_client: WebhookClient::new(&jira_url),
-        docker_client: WebhookClient::new(&docker_url),
     });
 
     HttpServer::new(move || {
@@ -38,7 +33,6 @@ async fn main() -> Result<()> {
             .app_data(bearer::Config::default())
             .app_data(Data::new(data.clone()))
             .service(jira::handle)
-            .service(docker::handle)
             .service(imgstore::serve_image)
     })
     .bind(("0.0.0.0", 3000))?
