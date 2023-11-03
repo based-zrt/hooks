@@ -40,8 +40,8 @@ async fn handle(info: web::Query<Info>, body: String, clients: Data<Arc<Clients>
         return HttpResponse::Unauthorized().finish();
     }
 
-    if &body.contains("issue_property_set") {
-        HttpResponse::Accepted().finish()
+    if body.contains("issue_property_set") {
+        return HttpResponse::Accepted().finish();
     }
 
     if env::var("LOG_REQUESTS").unwrap_or("".to_string()) != "" {
