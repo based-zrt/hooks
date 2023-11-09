@@ -1,6 +1,7 @@
 mod imgstore;
 mod jira;
 mod types;
+mod util;
 
 use std::env;
 use std::sync::Arc;
