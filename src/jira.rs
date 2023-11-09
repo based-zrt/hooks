@@ -1,7 +1,5 @@
-use std::fs::File;
-use std::io::prelude::*;
+use std::env;
 use std::sync::Arc;
-use std::{env, path::Path};
 
 use actix_web::{
     post,
@@ -9,7 +7,6 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use anyhow::Result;
-use chrono::Utc;
 use serde::Deserialize;
 use serde_json::json;
 use webhook::models::{Embed, Message};

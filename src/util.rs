@@ -1,3 +1,8 @@
+use std::io::prelude::*;
+use std::{fs::File, path::Path};
+
+use chrono::Utc;
+
 pub fn log_request(data: &String) -> std::io::Result<()> {
     let _ = std::fs::create_dir_all(Path::new("requests/"));
     let mut file = File::create(format!("requests/request_{}.json", Utc::now().format("%m-%d_%H-%M-%S")))?;
