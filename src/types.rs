@@ -12,6 +12,7 @@ pub struct JiraData {
     pub issue_event_type_name: Option<String>,
     pub changelog: Option<Changelog>,
     pub comment: Option<Comment>,
+    pub sprint: Option<Sprint>,
 }
 
 #[derive(Deserialize)]
@@ -103,4 +104,17 @@ pub struct Comment {
     pub update_author: User,
     pub created: String,
     pub updated: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Sprint {
+    #[serde(rename = "self")]
+    pub self_url: String,
+    pub id: i32,
+    pub state: String,
+    pub name: String,
+    pub start_date: String,
+    pub end_date: String,
+    pub goal: String,
 }

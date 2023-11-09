@@ -11,7 +11,7 @@ use serde::Deserialize;
 use serde_json::json;
 use webhook::models::{Embed, Message};
 
-use crate::types::Comment;
+use crate::types::{Comment, Sprint};
 use crate::util::{extract_event_name, log_request, root_url};
 use crate::{imgstore, types::JiraData, Clients};
 
@@ -101,6 +101,10 @@ async fn create_message(data: JiraData) -> Result<Message> {
         decorate_issue_embed(&mut embed, &data, issue_type_url, project_avatar_url);
     }
 
+    if data.sprint.is_some() {
+        decorate_sprint_embed(&mut embed, data.sprint.as_ref().unwrap());
+    }
+
     msg.embeds.push(embed);
 
     if data.comment.is_some() {
@@ -170,4 +174,10 @@ fn decorate_comment_embed(e: &mut Embed, c: &Comment) {
         c.author.avatar_urls.get("48x48").cloned(),
     )
     .description(c.body.as_str());
+}
+
+fn decorate_sprint_embed(e: &mut Embed, s: &Sprint) {
+    e.description(format!("**{}**\n{}", s.name, s.goal).as_str())
+        .field("Start", &s.start_date, true)
+        .field("End", &s.end_date, true);
 }
