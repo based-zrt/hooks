@@ -88,7 +88,6 @@ pub struct Changelog {
 #[serde(rename_all = "camelCase")]
 pub struct ChangelogItem {
     pub field: String,
-    pub field_id: String,
     pub from_string: Option<String>,
     pub to_string: Option<String>,
 }
